@@ -1,20 +1,76 @@
-# Reproducible Research: Peer Assessment 1
+---
+title: 'Reproducible Research: Peer Assessment 1'
+output:
+  html_document: 
+    keep_md: true
+---
+
+### Loading and preprocessing the data
+The following code reads in the activity data file and converts the date field.
+
+Afterwards it produces a summary and computes the mean steps per day.
+```{r}
+temp <- tempfile()
+download.file("http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",temp)
+activity <- read.csv(unz(temp, "activity.csv"))
+str(activity)
+activity$date<-as.Date(activity$date,"%Y-%m-%d")
+summary(activity)
+Tage <-aggregate(activity$steps, by=list(Date=activity$date), FUN="sum", na.rm=TRUE)
+meansteps<-mean(Tage$x, na.rm = T)
+```
+
+### What is mean total number of steps taken per day?
+
+The mean number of steps per day is `r meansteps`.
+
+```{r, echo=FALSE}
+par(mfrow=c(1,1))
+with(Tage,{
+  plot(Date,x,type="l",ylab="steps",xlab="date")})
+
+par(mfrow=c(1,1))
+with(Tage,{
+  hist(x,col='red', main="steps taken per day",xlab="steps taken per day")})
+```
+
+### What is the average daily activity pattern?
+```{r  }
+Minuten <-aggregate(activity$steps, by=list(Date=activity$interval), FUN="mean", na.rm=TRUE)
+
+par(mfrow=c(1,1))
+with(Minuten,{
+  plot(Date,x,type="l",ylab="steps",xlab="date")})
+```
 
 
-## Loading and preprocessing the data
+### Imputing missing values
+
+ Get the location of the NA values.
+```{r  }
+nanew <-aggregate(activity$steps, by=list(Date=activity$interval), FUN="median", na.rm=TRUE)
+naindex <- which(is.na(activity$steps)==TRUE)
+#activity$steps[naindex,1] <- nanew$x[naindex]
+```
+
+### Are there differences in activity patterns between weekdays and weekends?
+```{r, echo=F  }
+Sys.setlocale("LC_TIME", "English")
+weekend <- weekdays(as.Date(activity$date)) %in% c("Saturday", "Sunday") 
+activity$daytype[weekend == TRUE] <- "weekend" 
+activity$daytype[weekend == F] <- "weekday"
 
 
+weekendsteps <-aggregate(activity$steps[activity$daytype=="weekend"], by=list(Date=activity$interval[activity$daytype=="weekend"]), FUN="mean", na.rm=TRUE)
+weekdaysteps <-aggregate(activity$steps[activity$daytype=="weekday"], by=list(Date=activity$interval[activity$daytype=="weekday"]), FUN="mean", na.rm=TRUE)
+steps<-cbind(weekendsteps,weekdaysteps)
+colnames(steps)[4]<-"weekdaysteps"
+colnames(steps)[2]<-"weekendsteps"
+par(mfrow=c(2,1),mar=c(1, 1,1, 1))
+with(steps,{
+  plot(Date,weekdaysteps,type="l",ylab="Weekday steps")
+  plot(Date,weekendsteps,type="l",ylab="Weekday steps",xlab="Interval")
+  })
 
-## What is mean total number of steps taken per day?
+```
 
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
